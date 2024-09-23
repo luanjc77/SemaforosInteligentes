@@ -20,79 +20,78 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 # Função para desenhar as ruas
 def draw_roads():
     screen.fill(GRAY)
-
-    # Ruas horizontais
-    pygame.draw.rect(screen, BLACK, [0, 250, SCREEN_WIDTH, 100])
-    pygame.draw.rect(screen, BLACK, [250, 0, 100, SCREEN_HEIGHT])
-
-    # Linhas amarelas
-    for x in range(0, SCREEN_WIDTH, 40):
-        pygame.draw.line(screen, YELLOW, (x, 300), (x + 20, 300), 5)
-    for y in range(0, SCREEN_HEIGHT, 40):
-        pygame.draw.line(screen, YELLOW, (300, y), (300, y + 20), 5)
+    pygame.draw.rect(screen, BLACK, [250, 0, 100, 600])
+    pygame.draw.rect(screen, BLACK, [0, 250, 600, 100])
 
 def main():
-    running = True
     clock = pygame.time.Clock()
 
+    # Criar os semáforos
     traffic_lights = [
-        TrafficLight(250, 360, 'North'),
-        TrafficLight(250, 230, 'South'),
-        TrafficLight(370, 290, 'West'),
-        TrafficLight(210, 290, 'East')
+        TrafficLight(250, 250, 'North'),
+        TrafficLight(250, 330, 'South'),
+        TrafficLight(330, 250, 'East'),
+        TrafficLight(250, 250, 'West')
     ]
 
-    control_system = TrafficControlSystem(traffic_lights)
+    # Sistema de controle de tráfego
+    traffic_control = TrafficControlSystem(traffic_lights)
 
-    vehicles = {
-        'North': [],
-        'South': [],
-        'East': [],
-        'West': []
-    }
+    vehicles_norte = []
+    vehicles_sul = []
+    vehicles_leste = []
+    vehicles_oeste = []
 
+    # Loop principal do jogo
+    running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+        # Desenhar as ruas e semáforos
         draw_roads()
+        traffic_control.draw(screen)
 
-        control_system.update()
-        control_system.draw(screen)
+        # Atualizar o sistema de controle de tráfego
+        traffic_control.update()
 
-        # Gerar veículos e priorizar fila
-        if random.random() < 0.05:
-            direction = control_system.get_current_green_direction()
-            if direction == 'North':
-                vehicles['North'].append(VehicleNorte(265, 600))
-            elif direction == 'South':
-                vehicles['South'].append(VehicleSul(320, 0))
-            elif direction == 'East':
-                vehicles['East'].append(VehicleLeste(0, 310))
-            elif direction == 'West':
-                vehicles['West'].append(VehicleOeste(600, 255))
+        # Gerar veículos para cada direção
+        if len(vehicles_norte) < 5 and (len(vehicles_norte) == 0 or vehicles_norte[-1].has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT)):
+            vehicles_norte.append(VehicleNorte(280, 600))
+        if len(vehicles_sul) < 5 and (len(vehicles_sul) == 0 or vehicles_sul[-1].has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT)):
+            vehicles_sul.append(VehicleSul(320, -40))
+        if len(vehicles_leste) < 5 and (len(vehicles_leste) == 0 or vehicles_leste[-1].has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT)):
+            vehicles_leste.append(VehicleLeste(-40, 280))
+        if len(vehicles_oeste) < 5 and (len(vehicles_oeste) == 0 or vehicles_oeste[-1].has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT)):
+            vehicles_oeste.append(VehicleOeste(600, 320))
 
-        # Atualizar os veículos
-                # Atualizar os veículos
-        for direction, vehicle_list in vehicles.items():
-            for vehicle in vehicle_list[:]:
-                can_move = vehicle.direction == control_system.get_current_green_direction()
-                
-                # Passa o semáforo correspondente para contar veículos
-                relevant_traffic_light = next(light for light in traffic_lights if light.direction == vehicle.direction)
-                vehicle.move(can_move, traffic_light=relevant_traffic_light)
+        # Mover e desenhar veículos
+        for vehicle_list in [vehicles_norte, vehicles_sul, vehicles_leste, vehicles_oeste]:
+            for i, vehicle in enumerate(vehicle_list):
+                relevant_traffic_light = None
+                if vehicle.direction == 'North':
+                    relevant_traffic_light = traffic_lights[0]
+                elif vehicle.direction == 'South':
+                    relevant_traffic_light = traffic_lights[1]
+                elif vehicle.direction == 'East':
+                    relevant_traffic_light = traffic_lights[2]
+                elif vehicle.direction == 'West':
+                    relevant_traffic_light = traffic_lights[3]
+
+                can_move = True
+                vehicle_in_front = vehicle_list[i - 1] if i > 0 else None
+                vehicle.move(can_move, vehicle_in_front=vehicle_in_front, traffic_light=relevant_traffic_light)
                 vehicle.draw(screen)
 
-                if vehicle.has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT):
-                    vehicle_list.remove(vehicle)
-                    relevant_traffic_light.vehicle_count -= 1  # Reduzir o contador quando o veículo sair
+            # Remover veículos que saíram da tela
+            vehicle_list[:] = [v for v in vehicle_list if not v.has_left_screen(SCREEN_WIDTH, SCREEN_HEIGHT)]
 
-
+        # Atualizar a tela
         pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

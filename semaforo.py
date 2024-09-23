@@ -27,9 +27,7 @@ class TrafficLight:
 
     def draw(self, screen):
         if self.direction in ['North', 'South']:
-            # Desenhar o poste do semáforo deitado
             pygame.draw.rect(screen, DARK_GRAY, [self.x, self.y, 60, 20])
-            
             if self.color == RED:
                 pygame.draw.circle(screen, RED, (self.x + 10, self.y + 10), 8)
             elif self.color == GREEN:
@@ -37,9 +35,7 @@ class TrafficLight:
             elif self.color == YELLOW:
                 pygame.draw.circle(screen, YELLOW, (self.x + 30, self.y + 10), 8)
         else:
-            # Desenhar o poste do semáforo (vertical)
             pygame.draw.rect(screen, DARK_GRAY, [self.x, self.y, 20, 60])
-
             if self.color == RED:
                 pygame.draw.circle(screen, RED, (self.x + 10, self.y + 10), 8)
             elif self.color == GREEN:
@@ -57,16 +53,13 @@ class TrafficControlSystem:
         self.max_wait_time = 200  # Tempo máximo de espera antes de priorizar uma faixa
 
     def update(self):
-        # Atualizar tempo de espera e contar veículos
         for light in self.lights:
             if light.color == RED:
                 light.wait_time += 1
 
-        # Priorizar o semáforo com mais veículos ou o que esperou mais
         max_vehicles = max(self.lights, key=lambda l: l.vehicle_count)
         max_waiting = max(self.lights, key=lambda l: l.wait_time)
         
-        # Prioridade: mais veículos ou mais tempo esperando
         if max_vehicles.vehicle_count >= 3 or max_waiting.wait_time >= self.max_wait_time:
             priority_light = max_vehicles if max_vehicles.vehicle_count >= 3 else max_waiting
         else:
@@ -76,7 +69,6 @@ class TrafficControlSystem:
 
         if self.state == 'green':
             if self.timer >= self.green_duration or priority_light.wait_time > self.max_wait_time:
-                # Mudar para amarelo
                 for light in self.lights:
                     if light.color == GREEN:
                         light.set_yellow()
@@ -84,16 +76,13 @@ class TrafficControlSystem:
                 self.timer = 0
         elif self.state == 'yellow':
             if self.timer >= self.yellow_duration:
-                # Mudar o semáforo atual para vermelho e o de prioridade para verde
                 for light in self.lights:
                     light.close_light()
                 priority_light.open_light()
                 self.state = 'green'
                 self.timer = 0
 
-
     def get_current_green_direction(self):
-        # Retorna a direção que está com o semáforo verde
         for light in self.lights:
             if light.color == GREEN:
                 return light.direction
