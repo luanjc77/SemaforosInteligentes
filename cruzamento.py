@@ -45,7 +45,6 @@ class TrafficSignal:
         self.red = red
         self.yellow = yellow
         self.green = green
-        self.signalText = ""
         self.closedTime = 0  
 
 class Vehicle(pygame.sprite.Sprite):
